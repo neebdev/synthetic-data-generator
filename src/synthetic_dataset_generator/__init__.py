@@ -17,7 +17,7 @@ def launch(*args, **kwargs):
     Parameters: https://www.gradio.app/docs/gradio/tabbedinterface
     """
     from synthetic_dataset_generator.app import demo
-    return demo.launch(*args, **kwargs)
+    return demo.launch(*args, server_name="0.0.0.0", **kwargs)
 
 
 launch.__doc__ = TabbedInterface.launch.__doc__
