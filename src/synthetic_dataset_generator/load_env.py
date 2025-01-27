@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import Dict
+from dotenv import load_dotenv
 
 def load_env_file(env_path: Path | str) -> Dict[str, str]:
     """
@@ -30,23 +31,18 @@ def load_env_file(env_path: Path | str) -> Dict[str, str]:
     return env_vars
 
 
-def init_environment() -> Dict[str, str]:
-    """
-    Initialize environment variables from .env file in project root.
-    
-    Returns:
-        Dict of environment variables loaded
-        
-    Raises:
-        FileNotFoundError: If the .env file doesn't exist
-    """
+def init_environment():
+    """Initialize environment variables."""
     root_dir = Path(__file__).parent.parent.parent
     env_file = root_dir / ".env"
+
+    # Load .env if it exists, but do not fail if it does not exist
+    if env_file.exists():
+        load_dotenv(env_file)
     
-    if not env_file.exists():
-        raise FileNotFoundError(
-            f"Environment file not found at {env_file}. "
-            "Please create a .env file in the project root directory."
-        )
-        
-    return load_env_file(env_file) 
+    # Verify required variables are set
+    if not os.getenv("HF_TOKEN"):
+        raise ValueError(
+            "HF_TOKEN environment variable is required. "
+            "Please set it in your .env file or environment."
+        ) 
