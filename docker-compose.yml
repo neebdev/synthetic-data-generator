@@ -5,20 +5,78 @@ services:
     build: .
     ports:
       - "7860:7860"
-    env_file:
-      - .env
-    #volumes:
-    #  - nltk_data:/app/nltk_data
+    env_file: .env
+    networks:
+      - app-network
+    depends_on:
+      ollama:
+        condition: service_healthy
+        required: false
+      argilla:
+        condition: service_healthy
+        required: false
+
+  ollama:
+    image: ollama/ollama:${OLLAMA_HARDWARE:-latest}
+    profiles:
+      - with-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - app-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7860/"]
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
-    restart: unless-stopped
+    command: ollama serve
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.13
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  argilla:
+    image: argilla/argilla-server:latest
+    profiles:
+      - with-argilla
+    ports:
+      - "6900:6900"
+    env_file: .env
+    environment:
+      - USERNAME=${ARGILLA_USERNAME}
+      - PASSWORD=${ARGILLA_PASSWORD}
+      - API_KEY=${ARGILLA_API_KEY}
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    volumes:
+      - argilla_data:/argilla
+    networks:
+      - app-network
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6900/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
-  nltk_data:
+  ollama_data:
+  argilla_data:
+  es_data:
 
 networks:
   app-network:
