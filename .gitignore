@@ -168,3 +168,6 @@ nltk_data/
 
 # examples
 models/
+
+# Elasticsearch data
+elasticsearch_data/
