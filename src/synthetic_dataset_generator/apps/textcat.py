@@ -49,7 +49,7 @@ def _get_dataframe():
     )
 
 
-def generate_system_prompt(dataset_description, progress=gr.Progress()):
+def generate_system_prompt(dataset_description: str, progress=gr.Progress()):
     progress(0.0, desc="Starting")
     progress(0.3, desc="Initializing")
     generate_description = get_prompt_generator()
@@ -71,7 +71,12 @@ def generate_system_prompt(dataset_description, progress=gr.Progress()):
 
 
 def generate_sample_dataset(
-    system_prompt, difficulty, clarity, labels, multi_label, progress=gr.Progress()
+    system_prompt: str,
+    difficulty: str,
+    clarity: str,
+    labels: List[str],
+    multi_label: bool,
+    progress=gr.Progress(),
 ):
     dataframe = generate_dataset(
         system_prompt=system_prompt,
@@ -294,14 +299,14 @@ def push_dataset(
         temperature=temperature,
     )
     push_dataset_to_hub(
-        dataframe,
-        org_name,
-        repo_name,
-        multi_label,
-        labels,
-        oauth_token,
-        private,
-        pipeline_code,
+        dataframe=dataframe,
+        org_name=org_name,
+        repo_name=repo_name,
+        multi_label=multi_label,
+        labels=labels,
+        oauth_token=oauth_token,
+        private=private,
+        pipeline_code=pipeline_code,
     )
 
     dataframe = dataframe[
@@ -453,62 +458,59 @@ with gr.Blocks() as app:
 
         gr.HTML("<hr>")
         gr.Markdown("## 2. Configure your dataset")
-        with gr.Row(equal_height=True):
-            with gr.Row(equal_height=False):
-                with gr.Column(scale=2):
-                    system_prompt = gr.Textbox(
-                        label="System prompt",
-                        placeholder="You are a helpful assistant.",
-                        visible=True,
-                    )
-                    labels = gr.Dropdown(
-                        choices=[],
-                        allow_custom_value=True,
-                        interactive=True,
-                        label="Labels",
-                        multiselect=True,
-                        info="Add the labels to classify the text.",
-                    )
-                    multi_label = gr.Checkbox(
-                        label="Multi-label",
-                        value=False,
-                        interactive=True,
-                        info="If checked, the text will be classified into multiple labels.",
-                    )
-                    clarity = gr.Dropdown(
-                        choices=[
-                            ("Clear", "clear"),
-                            (
-                                "Understandable",
-                                "understandable with some effort",
-                            ),
-                            ("Ambiguous", "ambiguous"),
-                            ("Mixed", "mixed"),
-                        ],
-                        value="mixed",
-                        label="Clarity",
-                        info="Set how easily the correct label or labels can be identified.",
-                        interactive=True,
-                    )
-                    difficulty = gr.Dropdown(
-                        choices=[
-                            ("High School", "high school"),
-                            ("College", "college"),
-                            ("PhD", "PhD"),
-                            ("Mixed", "mixed"),
-                        ],
-                        value="high school",
-                        label="Difficulty",
-                        info="Select the comprehension level for the text. Ensure it matches the task context.",
-                        interactive=True,
-                    )
-                    with gr.Row():
-                        clear_btn_full = gr.Button("Clear", variant="secondary")
-                        btn_apply_to_sample_dataset = gr.Button(
-                            "Save", variant="primary"
-                        )
-                with gr.Column(scale=3):
-                    dataframe = _get_dataframe()
+        with gr.Row(equal_height=False):
+            with gr.Column(scale=2):
+                system_prompt = gr.Textbox(
+                    label="System prompt",
+                    placeholder="You are a helpful assistant.",
+                    visible=True,
+                )
+                labels = gr.Dropdown(
+                    choices=[],
+                    allow_custom_value=True,
+                    interactive=True,
+                    label="Labels",
+                    multiselect=True,
+                    info="Add the labels to classify the text.",
+                )
+                multi_label = gr.Checkbox(
+                    label="Multi-label",
+                    value=False,
+                    interactive=True,
+                    info="If checked, the text will be classified into multiple labels.",
+                )
+                clarity = gr.Dropdown(
+                    choices=[
+                        ("Clear", "clear"),
+                        (
+                            "Understandable",
+                            "understandable with some effort",
+                        ),
+                        ("Ambiguous", "ambiguous"),
+                        ("Mixed", "mixed"),
+                    ],
+                    value="mixed",
+                    label="Clarity",
+                    info="Set how easily the correct label or labels can be identified.",
+                    interactive=True,
+                )
+                difficulty = gr.Dropdown(
+                    choices=[
+                        ("High School", "high school"),
+                        ("College", "college"),
+                        ("PhD", "PhD"),
+                        ("Mixed", "mixed"),
+                    ],
+                    value="high school",
+                    label="Difficulty",
+                    info="Select the comprehension level for the text. Ensure it matches the task context.",
+                    interactive=True,
+                )
+                with gr.Row():
+                    clear_btn_full = gr.Button("Clear", variant="secondary")
+                    btn_apply_to_sample_dataset = gr.Button("Save", variant="primary")
+            with gr.Column(scale=3):
+                dataframe = _get_dataframe()
 
         gr.HTML("<hr>")
         gr.Markdown("## 3. Generate your dataset")
@@ -530,7 +532,7 @@ with gr.Blocks() as app:
                 temperature = gr.Slider(
                     label="Temperature",
                     minimum=0.1,
-                    maximum=1,
+                    maximum=1.5,
                     value=0.8,
                     step=0.1,
                     interactive=True,
@@ -570,45 +572,37 @@ with gr.Blocks() as app:
         fn=generate_system_prompt,
         inputs=[dataset_description],
         outputs=[system_prompt, labels],
-        show_progress=True,
     ).then(
         fn=generate_sample_dataset,
         inputs=[system_prompt, difficulty, clarity, labels, multi_label],
         outputs=[dataframe],
-        show_progress=True,
     )
 
     btn_apply_to_sample_dataset.click(
         fn=validate_input_labels,
         inputs=[labels],
         outputs=[labels],
-        show_progress=True,
     ).success(
         fn=generate_sample_dataset,
         inputs=[system_prompt, difficulty, clarity, labels, multi_label],
         outputs=[dataframe],
-        show_progress=True,
     )
 
     btn_push_to_hub.click(
         fn=validate_argilla_user_workspace_dataset,
         inputs=[repo_name],
         outputs=[success_message],
-        show_progress=True,
     ).then(
         fn=validate_push_to_hub,
         inputs=[org_name, repo_name],
         outputs=[success_message],
-        show_progress=True,
     ).success(
         fn=validate_input_labels,
         inputs=[labels],
         outputs=[labels],
-        show_progress=True,
     ).success(
         fn=hide_success_message,
         outputs=[success_message],
-        show_progress=True,
     ).success(
         fn=hide_pipeline_code_visibility,
         inputs=[],
@@ -629,7 +623,6 @@ with gr.Blocks() as app:
             pipeline_code,
         ],
         outputs=[success_message],
-        show_progress=True,
     ).success(
         fn=show_success_message,
         inputs=[org_name, repo_name],
@@ -657,6 +650,7 @@ with gr.Blocks() as app:
             "",
             "",
             [],
+            "",
             _get_dataframe(),
         ),
         inputs=[dataframe],
