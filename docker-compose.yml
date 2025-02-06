@@ -1,65 +1,134 @@
-version: '3.8'
-
 services:
+  # Base application
   app:
     build: .
+    image: synthetic-data-generator:app
     ports:
       - "7860:7860"
-    env_file: .env
+    env_file:
+      - .env
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
     networks:
       - app-network
     depends_on:
+      argilla:
+        condition: service_started
+        required: false
       ollama:
         condition: service_healthy
         required: false
-      argilla:
-        condition: service_healthy
-        required: false
 
+  # Ollama service
   ollama:
+    # CPU/NVIDIA usa latest, AMD usa rocm
     image: ollama/ollama:${OLLAMA_HARDWARE:-latest}
     profiles:
       - with-ollama
     ports:
       - "11434:11434"
+    command: serve #&& pull ${OLLAMA_MODEL} && run ${OLLAMA_MODEL}
+    env_file:
+      - .env
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-}
     volumes:
       - ollama_data:/root/.ollama
+      # only AMD if OLLAMA_HARDWARE=rocm
+      - /dev/kfd:/dev/kfd:${OLLAMA_HARDWARE:-none}=rocm
+      - /dev/dri:/dev/dri:${OLLAMA_HARDWARE:-none}=rocm
     networks:
       - app-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:11434/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-    command: ollama serve
 
+  # Elasticsearch service for Argilla
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.13
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+    profiles:
+      - with-argilla
     environment:
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - node.name=elasticsearch
+      - cluster.name=es-argilla-local
       - discovery.type=single-node
+      - cluster.routing.allocation.disk.threshold_enabled=false
       - xpack.security.enabled=false
     volumes:
       - es_data:/usr/share/elasticsearch/data
     networks:
       - app-network
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9200"]
       interval: 30s
       timeout: 10s
       retries: 3
 
+  # PostgreSQL service for Argilla
+  postgres:
+    image: postgres:14
+    profiles:
+      - with-argilla
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: argilla
+    networks:
+      - app-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Redis service for Argilla
+  redis:
+    image: redis
+    profiles:
+      - with-argilla
+    networks:
+      - app-network
+
+  # Argilla service
   argilla:
     image: argilla/argilla-server:latest
     profiles:
       - with-argilla
     ports:
       - "6900:6900"
-    env_file: .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6900/api/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    env_file:
+      - .env
     environment:
+      - ARGILLA_HOME_PATH=/var/lib/argilla
+      - ARGILLA_ELASTICSEARCH=http://elasticsearch:9200
+      - ARGILLA_DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/argilla
+      - ARGILLA_REDIS_URL=redis://redis:6379/0
       - USERNAME=${ARGILLA_USERNAME}
       - PASSWORD=${ARGILLA_PASSWORD}
       - API_KEY=${ARGILLA_API_KEY}
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - WORKSPACE=default
     volumes:
       - argilla_data:/argilla
     networks:
@@ -67,17 +136,46 @@ services:
     depends_on:
       elasticsearch:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6900/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
 
-volumes:
-  ollama_data:
-  argilla_data:
-  es_data:
+  # Argilla Worker
+  worker:
+    image: argilla/argilla-server:latest
+    profiles:
+      - with-argilla
+    env_file:
+      - .env
+    environment:
+      - ARGILLA_HOME_PATH=/var/lib/argilla
+      - ARGILLA_ELASTICSEARCH=http://elasticsearch:9200
+      - ARGILLA_DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/argilla
+      - ARGILLA_REDIS_URL=redis://redis:6379/0
+      - BACKGROUND_NUM_WORKERS=2
+      - USERNAME=${ARGILLA_USERNAME}
+      - PASSWORD=${ARGILLA_PASSWORD}
+      - API_KEY=${ARGILLA_API_KEY}
+      - WORKSPACE=default
+    networks:
+      - app-network
+    depends_on:
+      - postgres
+      - elasticsearch
+      - redis
+    command: sh -c 'python -m argilla_server worker --num-workers $${BACKGROUND_NUM_WORKERS}'
 
 networks:
   app-network:
-    driver: bridge 
+    driver: bridge
+
+volumes:
+  es_data:
+    driver: local
+  argilla_data:
+    driver: local
+  ollama_data:
+    driver: local
+  postgres_data:
+    driver: local 
