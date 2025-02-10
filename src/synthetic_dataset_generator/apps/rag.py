@@ -24,7 +24,12 @@ from synthetic_dataset_generator.apps.base import (
     validate_argilla_user_workspace_dataset,
     validate_push_to_hub,
 )
-from synthetic_dataset_generator.constants import DEFAULT_BATCH_SIZE, MODEL, MODEL_COMPLETION, SAVE_LOCAL_DIR
+from synthetic_dataset_generator.constants import (
+    DEFAULT_BATCH_SIZE,
+    MODEL,
+    MODEL_COMPLETION,
+    SAVE_LOCAL_DIR,
+)
 from synthetic_dataset_generator.pipelines.base import get_rewritten_prompts
 from synthetic_dataset_generator.pipelines.embeddings import (
     get_embeddings,
@@ -156,7 +161,7 @@ def generate_dataset(
         is_sample=is_sample,
     )
     response_generator = get_response_generator(
-        temperature = temperature_completion or temperature , is_sample=is_sample
+        temperature=temperature_completion or temperature, is_sample=is_sample
     )
     if reranking:
         reranking_generator = get_sentence_pair_generator(
@@ -564,11 +569,29 @@ def show_temperature_completion():
         return {temperature_completion: gr.Slider(value=0.9, visible=True)}
 
 
+def show_save_local_button():
+    return {btn_save_local: gr.Button(visible=True)}
+
+
+def hide_save_local_button():
+    return {btn_save_local: gr.Button(visible=False)}
+
+
 def show_save_local():
+    gr.update(success_message, min_height=0)
     return {
-        btn_save_local: gr.Button(visible=True),
         csv_file: gr.File(visible=True),
-        json_file: gr.File(visible=True)
+        json_file: gr.File(visible=True),
+        success_message: success_message,
+    }
+
+
+def hide_save_local():
+    gr.update(success_message, min_height=100)
+    return {
+        csv_file: gr.File(visible=False),
+        json_file: gr.File(visible=False),
+        success_message: success_message,
     }
 
 
@@ -725,18 +748,24 @@ with gr.Blocks() as app:
                     interactive=True,
                     scale=1,
                 )
-                btn_push_to_hub = gr.Button(
-                    "Push to Hub", variant="primary", scale=2
-                )
+                btn_push_to_hub = gr.Button("Push to Hub", variant="primary", scale=2)
                 btn_save_local = gr.Button(
                     "Save locally", variant="primary", scale=2, visible=False
                 )
-                csv_file = gr.File(label="CSV", elem_classes="datasets", visible=False)
-                json_file = gr.File(label="JSON", elem_classes="datasets", visible=False)
             with gr.Column(scale=3):
+                csv_file = gr.File(
+                    label="CSV",
+                    elem_classes="datasets",
+                    visible=False,
+                )
+                json_file = gr.File(
+                    label="JSON",
+                    elem_classes="datasets",
+                    visible=False,
+                )
                 success_message = gr.Markdown(
-                    visible=True,
-                    min_height=100,  # don't remove this otherwise progress is not visible
+                    visible=False,
+                    min_height=0,  # don't remove this otherwise progress is not visible
                 )
                 with gr.Accordion(
                     "Customize your pipeline with distilabel",
@@ -835,6 +864,9 @@ with gr.Blocks() as app:
         inputs=[org_name, repo_name],
         outputs=[success_message],
     ).success(
+        fn=hide_save_local,
+        outputs=[csv_file, json_file, success_message],
+    ).success(
         fn=hide_success_message,
         outputs=[success_message],
     ).success(
@@ -881,6 +913,17 @@ with gr.Blocks() as app:
     )
 
     btn_save_local.click(
+        fn=hide_success_message,
+        outputs=[success_message],
+    ).success(
+        fn=hide_pipeline_code_visibility,
+        inputs=[],
+        outputs=[pipeline_code_ui],
+    ).success(
+        fn=show_save_local,
+        inputs=[],
+        outputs=[csv_file, json_file, success_message],
+    ).success(
         save_local,
         inputs=[
             search_in,
@@ -894,7 +937,22 @@ with gr.Blocks() as app:
             repo_name,
             temperature_completion,
         ],
-        outputs=[csv_file, json_file]
+        outputs=[csv_file, json_file],
+    ).success(
+        fn=generate_pipeline_code,
+        inputs=[
+            search_in,
+            input_type,
+            system_prompt,
+            document_column,
+            retrieval_reranking,
+            num_rows,
+        ],
+        outputs=[pipeline_code],
+    ).success(
+        fn=show_pipeline_code_visibility,
+        inputs=[],
+        outputs=[pipeline_code_ui],
     )
 
     clear_dataset_btn_part.click(fn=lambda: "", inputs=[], outputs=[search_in])
@@ -911,4 +969,4 @@ with gr.Blocks() as app:
     app.load(fn=get_random_repo_name, outputs=[repo_name])
     app.load(fn=show_temperature_completion, outputs=[temperature_completion])
     if SAVE_LOCAL_DIR is not None:
-        app.load(fn=show_save_local, outputs=[btn_save_local, csv_file, json_file])
+        app.load(fn=show_save_local_button, outputs=btn_save_local)

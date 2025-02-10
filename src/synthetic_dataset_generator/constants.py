@@ -8,7 +8,7 @@ MAX_NUM_TOKENS = int(os.getenv("MAX_NUM_TOKENS", 2048))
 MAX_NUM_ROWS = int(os.getenv("MAX_NUM_ROWS", 1000))
 DEFAULT_BATCH_SIZE = int(os.getenv("DEFAULT_BATCH_SIZE", 5))
 
-# Directory for outputs
+# Directory to locally save the generated data
 SAVE_LOCAL_DIR = os.getenv(key="SAVE_LOCAL_DIR", default=None)
 
 # Models
