@@ -104,6 +104,10 @@ Optionally, you can also push your datasets to Argilla for further curation by s
 - `ARGILLA_API_KEY`: Your Argilla API key to push your datasets to Argilla.
 - `ARGILLA_API_URL`: Your Argilla API URL to push your datasets to Argilla.
 
+To save the generated datasets to a local directory instead of pushing them to the Hugging Face Hub, set the following environment variable:
+
+- `SAVE_LOCAL_DIR`: The local directory to save the generated datasets to.
+
 ### Argilla integration
 
 Argilla is an open source tool for data curation. It allows you to annotate and review datasets, and push curated datasets to the Hugging Face Hub. You can easily get started with Argilla by following the [quickstart guide](https://docs.argilla.io/latest/getting_started/quickstart/).

@@ -1,4 +1,5 @@
 import json
+import os
 import random
 import uuid
 from typing import List, Union
@@ -19,7 +20,7 @@ from synthetic_dataset_generator.apps.base import (
     validate_argilla_user_workspace_dataset,
     validate_push_to_hub,
 )
-from synthetic_dataset_generator.constants import DEFAULT_BATCH_SIZE
+from synthetic_dataset_generator.constants import DEFAULT_BATCH_SIZE, SAVE_LOCAL_DIR
 from synthetic_dataset_generator.pipelines.base import get_rewritten_prompts
 from synthetic_dataset_generator.pipelines.embeddings import (
     get_embeddings,
@@ -195,7 +196,7 @@ def generate_dataset(
                     set(
                         label.lower().strip()
                         for label in x
-                        if label.lower().strip() in labels
+                        if isinstance(label, str) and label.lower().strip() in labels
                     )
                 )
             else:
@@ -406,6 +407,33 @@ def push_dataset(
     return ""
 
 
+def save_local(
+    system_prompt: str,
+    difficulty: str,
+    clarity: str,
+    labels: List[str],
+    multi_label: bool,
+    num_rows: int,
+    temperature: float,
+    repo_name: str,
+) -> pd.DataFrame:
+    dataframe = generate_dataset(
+        system_prompt=system_prompt,
+        difficulty=difficulty,
+        clarity=clarity,
+        multi_label=multi_label,
+        labels=labels,
+        num_rows=num_rows,
+        temperature=temperature,
+    )
+    local_dataset = Dataset.from_pandas(dataframe)
+    output_csv = os.path.join(SAVE_LOCAL_DIR, repo_name + ".csv")
+    output_json = os.path.join(SAVE_LOCAL_DIR, repo_name + ".json")
+    local_dataset.to_csv(output_csv, index=False)
+    local_dataset.to_json(output_json, index=False)
+    return output_csv, output_json
+
+
 def validate_input_labels(labels: List[str]) -> List[str]:
     if (
         not labels
@@ -423,6 +451,32 @@ def show_pipeline_code_visibility():
 
 def hide_pipeline_code_visibility():
     return {pipeline_code_ui: gr.Accordion(visible=False)}
+
+
+def show_save_local_button():
+    return {btn_save_local: gr.Button(visible=True)}
+
+
+def hide_save_local_button():
+    return {btn_save_local: gr.Button(visible=False)}
+
+
+def show_save_local():
+    gr.update(success_message, min_height=0)
+    return {
+        csv_file: gr.File(visible=True),
+        json_file: gr.File(visible=True),
+        success_message: success_message,
+    }
+
+
+def hide_save_local():
+    gr.update(success_message, min_height=100)
+    return {
+        csv_file: gr.File(visible=False),
+        json_file: gr.File(visible=False),
+        success_message: success_message,
+    }
 
 
 ######################
@@ -544,10 +598,23 @@ with gr.Blocks() as app:
                     scale=1,
                 )
                 btn_push_to_hub = gr.Button("Push to Hub", variant="primary", scale=2)
+                btn_save_local = gr.Button(
+                    "Save locally", variant="primary", scale=2, visible=False
+                )
             with gr.Column(scale=3):
+                csv_file = gr.File(
+                    label="CSV",
+                    elem_classes="datasets",
+                    visible=False,
+                )
+                json_file = gr.File(
+                    label="JSON",
+                    elem_classes="datasets",
+                    visible=False,
+                )
                 success_message = gr.Markdown(
-                    visible=True,
-                    min_height=100,  # don't remove this otherwise progress is not visible
+                    visible=False,
+                    min_height=0,  # don't remove this otherwise progress is not visible
                 )
                 with gr.Accordion(
                     "Customize your pipeline with distilabel",
@@ -601,6 +668,9 @@ with gr.Blocks() as app:
         inputs=[labels],
         outputs=[labels],
     ).success(
+        fn=hide_save_local,
+        outputs=[csv_file, json_file, success_message],
+    ).success(
         fn=hide_success_message,
         outputs=[success_message],
     ).success(
@@ -644,6 +714,47 @@ with gr.Blocks() as app:
         outputs=[pipeline_code_ui],
     )
 
+    btn_save_local.click(
+        fn=hide_success_message,
+        outputs=[success_message],
+    ).success(
+        fn=hide_pipeline_code_visibility,
+        inputs=[],
+        outputs=[pipeline_code_ui],
+    ).success(
+        fn=show_save_local,
+        inputs=[],
+        outputs=[csv_file, json_file, success_message],
+    ).success(
+        save_local,
+        inputs=[
+            system_prompt,
+            difficulty,
+            clarity,
+            labels,
+            multi_label,
+            num_rows,
+            temperature,
+            repo_name,
+        ],
+        outputs=[csv_file, json_file],
+    ).success(
+        fn=generate_pipeline_code,
+        inputs=[
+            system_prompt,
+            difficulty,
+            clarity,
+            labels,
+            multi_label,
+            num_rows,
+        ],
+        outputs=[pipeline_code],
+    ).success(
+        fn=show_pipeline_code_visibility,
+        inputs=[],
+        outputs=[pipeline_code_ui],
+    )
+
     gr.on(
         triggers=[clear_btn_part.click, clear_btn_full.click],
         fn=lambda _: (
@@ -660,3 +771,5 @@ with gr.Blocks() as app:
     app.load(fn=swap_visibility, outputs=main_ui)
     app.load(fn=get_org_dropdown, outputs=[org_name])
     app.load(fn=get_random_repo_name, outputs=[repo_name])
+    if SAVE_LOCAL_DIR is not None:
+        app.load(fn=show_save_local_button, outputs=btn_save_local)
