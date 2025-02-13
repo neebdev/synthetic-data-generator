@@ -31,7 +31,7 @@ RUN chown -R appuser:appuser /app && \
 USER appuser
 
 # Install dependencies in a virtual environment
-RUN pdm install --prod --no-lock
+RUN pdm install --prod --frozen-lockfile
 
 # Expose Gradio port
 EXPOSE 7860
