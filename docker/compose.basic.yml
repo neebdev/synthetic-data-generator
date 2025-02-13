@@ -1,0 +1,54 @@
+services:
+  # Base application
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: synthetic-data-generator:app
+    ports:
+      - "7860:7860"
+    env_file:
+      - ../.env
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+    networks:
+      - app-network
+    depends_on:
+      ollama:
+        condition: service_healthy
+        required: true
+
+  # Ollama service
+  ollama:
+    image: ollama/ollama:${OLLAMA_HARDWARE:-latest}
+    ports:
+      - "11434:11434"
+    command: serve
+    env_file:
+      - ../.env
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-}
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - app-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  ollama_data:
+    driver: local 
