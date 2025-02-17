@@ -5,11 +5,6 @@ from synthetic_dataset_generator import (  # noqa
     _distiset,
     _inference_endpoints,
 )
-from synthetic_dataset_generator.load_env import init_environment
-
-# Initialize environment variables
-init_environment()
-
 
 def launch(*args, **kwargs):
     """Launch the synthetic dataset generator.
