@@ -162,5 +162,4 @@ docker compose -f docker-compose.yml -f docker/ollama/compose.yml -f docker/argi
 
 Once running, access the Synthetic Data Generator at [localhost:7860](http://localhost:7860)
 
-
 > For more detailed Docker configurations and setups, check [docker/README.md](docker/README.md)
