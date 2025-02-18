@@ -31,7 +31,6 @@ services:
               count: all
               capabilities: [gpu]
     tty: true
-    #restart: always
     entrypoint: ["/usr/bin/bash", "/entrypoint.sh"]
     healthcheck:
       test: 
