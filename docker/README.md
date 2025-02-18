@@ -13,9 +13,6 @@ The `MODEL` variable in your `.env` file determines which model Ollama will down
 MODEL=llama3.2:1b
 ```
 
-- Ollama will automatically download and set up the specified model
-- No manual commands or downloads are needed
-
 ## Setup Options
 
 ### Full Setup (App + Ollama + Argilla)
