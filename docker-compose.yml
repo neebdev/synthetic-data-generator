@@ -1,0 +1,17 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: synthetic-data-generator:app
+    ports:
+      - "7860:7860"
+    env_file:
+      - .env
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    name: synthetic-data-network
+    driver: bridge

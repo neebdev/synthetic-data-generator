@@ -1,60 +1,17 @@
 services:
-  # Base application
   app:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-    image: synthetic-data-generator:app
-    ports:
-      - "7860:7860"
-    env_file:
-      - ../.env
-    environment:
-      - HF_TOKEN=${HF_TOKEN}
-    networks:
-      - app-network
+    extends:
+      file: docker-compose.yml
+      service: app
     depends_on:
       argilla:
-        condition: service_started
-        required: false
-      ollama:
         condition: service_healthy
         required: false
-
-  # Ollama service
-  ollama:
-    image: ollama/ollama:${OLLAMA_HARDWARE:-latest}
-    profiles:
-      - with-ollama
-    ports:
-      - "11434:11434"
-    command: serve
-    env_file:
-      - ../.env
     environment:
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-}
-    volumes:
-      - ollama_data:/root/.ollama
-    networks:
-      - app-network
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - ARGILLA_API_URL=http://argilla:6900
 
-  # Elasticsearch service for Argilla
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
-    profiles:
-      - with-argilla
     environment:
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
       - node.name=elasticsearch
@@ -82,11 +39,8 @@ services:
       timeout: 10s
       retries: 3
 
-  # PostgreSQL service for Argilla
   postgres:
     image: postgres:14
-    profiles:
-      - with-argilla
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -96,19 +50,13 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # Redis service for Argilla
   redis:
     image: redis
-    profiles:
-      - with-argilla
     networks:
       - app-network
 
-  # Argilla service
   argilla:
     image: argilla/argilla-server:latest
-    profiles:
-      - with-argilla
     ports:
       - "6900:6900"
     healthcheck:
@@ -117,7 +65,7 @@ services:
       timeout: 10s
       retries: 3
     env_file:
-      - ../.env
+      - .env
     environment:
       - ARGILLA_HOME_PATH=/var/lib/argilla
       - ARGILLA_ELASTICSEARCH=http://elasticsearch:9200
@@ -139,13 +87,10 @@ services:
       redis:
         condition: service_started
 
-  # Argilla Worker
   worker:
     image: argilla/argilla-server:latest
-    profiles:
-      - with-argilla
     env_file:
-      - ../.env
+      - .env
     environment:
       - ARGILLA_HOME_PATH=/var/lib/argilla
       - ARGILLA_ELASTICSEARCH=http://elasticsearch:9200
@@ -164,16 +109,10 @@ services:
       - redis
     command: sh -c 'python -m argilla_server worker --num-workers $${BACKGROUND_NUM_WORKERS}'
 
-networks:
-  app-network:
-    driver: bridge
-
 volumes:
   es_data:
-    driver: local
+    name: synthetic-data-es
   argilla_data:
-    driver: local
-  ollama_data:
-    driver: local
+    name: synthetic-data-argilla
   postgres_data:
-    driver: local
+    name: synthetic-data-postgres 
