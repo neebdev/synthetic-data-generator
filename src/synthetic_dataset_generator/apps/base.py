@@ -131,6 +131,9 @@ def show_success_message(org_name: str, repo_name: str) -> gr.Markdown:
             max_height=None,
         )
     argilla_api_url = client.api_url
+    # Transform Docker internal URL to localhost if needed
+    if "argilla:" in argilla_api_url:
+        argilla_api_url = argilla_api_url.replace("argilla:", "127.0.0.1:")
     return gr.Markdown(
         value=f"""
                 <div style="padding: 1em; background-color: var(--block-background-fill); border-color: var(--border-color-primary); border-width: 1px; border-radius: 5px;">

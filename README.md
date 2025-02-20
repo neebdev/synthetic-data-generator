@@ -108,6 +108,12 @@ To save the generated datasets to a local directory instead of pushing them to t
 
 - `SAVE_LOCAL_DIR`: The local directory to save the generated datasets to.
 
+You can use our environment template as a starting point:
+
+```bash
+cp .env.local.template .env
+```
+
 ### Argilla integration
 
 Argilla is an open source tool for data curation. It allows you to annotate and review datasets, and push curated datasets to the Hugging Face Hub. You can easily get started with Argilla by following the [quickstart guide](https://docs.argilla.io/latest/getting_started/quickstart/).
@@ -138,3 +144,20 @@ Run the app:
 ```bash
 python app.py
 ```
+
+## 🐳 Docker Setup
+
+Quick setup with all services (App + Ollama + Argilla):
+
+```bash
+# Copy environment template
+cp docker/.env.docker.template .env # Add your HF_TOKEN in .env
+
+# Build all services (this may take a few minutes)
+docker compose -f docker-compose.yml -f docker/ollama/compose.yml -f docker/argilla/compose.yml build
+
+# Start all services
+docker compose -f docker-compose.yml -f docker/ollama/compose.yml -f docker/argilla/compose.yml up -d
+```
+
+> For more detailed Docker configurations and setups, check [docker/README.md](docker/README.md)

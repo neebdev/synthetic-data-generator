@@ -17,6 +17,9 @@ button[role="tab"][aria-selected="true"]:hover {border-color: var(--button-prima
 .table-wrap .tbody td {vertical-align: top}
 #system_prompt_examples {color: var(--body-text-color) !important; background-color: var(--block-background-fill) !important;}
 .container {padding-inline: 0 !important}
+.gradio-container { width: 100% !important; }
+.gradio-row { display: flex !important; flex-direction: row !important; }
+.gradio-column { flex: 1 !important; min-width: 0 !important; }
 #sign_in_button {flex-grow: 0; width: auto !important; display: flex; align-items: center; justify-content: center; margin: 0 auto;}
 .datasets {height: 70px;}
 """
