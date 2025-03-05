@@ -100,28 +100,28 @@ For a detailed overview of the generation process, check out the [introduction t
 
 
 ### 2.3. **Full Dataset Generation**
-   After validating the sample data quality, proceed with full dataset generation. Configure the following parameters:
+After validating the sample data quality, proceed with full dataset generation. Configure the following parameters:
 
-   - **Repository Owner**: Your Hugging Face username for dataset hosting
-   - **Dataset Name**: A descriptive name following standard naming conventions
-   - **Number of Examples**: Define dataset size (recommended: 100-1000 for initial deployments)
-   - **Temperature**: Controls generation creativity (default 0.7 balances coherence and diversity)
-   - **Privacy Settings**: Optional dataset privacy configuration for Hugging Face Hub
+- **Repository Owner**: Your Hugging Face username for dataset hosting
+- **Dataset Name**: A descriptive name following standard naming conventions
+- **Number of Examples**: Define dataset size (recommended: 100-1000 for initial deployments)
+- **Temperature**: Controls generation creativity (default 0.7 balances coherence and diversity)
+- **Privacy Settings**: Optional dataset privacy configuration for Hugging Face Hub
 
-   The temperature parameter significantly impacts output quality:
-   - 0.5-0.7: Optimal for technical documentation and factual content
-   - 0.7-0.8: Balanced for general purpose datasets
-   - 0.8-1.0: Increased creativity, suitable for conversational data
+The temperature parameter significantly impacts output quality:
+- 0.5-0.7: Optimal for technical documentation and factual content
+- 0.7-0.8: Balanced for general purpose datasets
+- 0.8-1.0: Increased creativity, suitable for conversational data
 
 
-   The system initiates the generation pipeline, leveraging Distilabel for structured output:
-   ![image/png](https://cdn-uploads.huggingface.co/production/uploads/64461026e1fd8d65b27e6187/PWNT_bLHwFjeoFX7AhA-z.png)
+The system initiates the generation pipeline, leveraging Distilabel for structured output:
+![image/png](https://cdn-uploads.huggingface.co/production/uploads/64461026e1fd8d65b27e6187/PWNT_bLHwFjeoFX7AhA-z.png)
 
    
-   Upon completion, the dataset is pushed to Hugging Face Hub:
-   ![Generation Complete](https://cdn-uploads.huggingface.co/production/uploads/64461026e1fd8d65b27e6187/ohd4S-RyNI406uLPf4bnZ.png)
+Upon completion, the dataset is pushed to Hugging Face Hub:
+![Generation Complete](https://cdn-uploads.huggingface.co/production/uploads/64461026e1fd8d65b27e6187/ohd4S-RyNI406uLPf4bnZ.png)
 
-   Access your generated dataset through the Hugging Face Hub interface:
+Access your generated dataset through the Hugging Face Hub interface:
 
 <iframe
    src="https://huggingface.co/datasets/daqc/info-security-policies-rag-distiset/embed/viewer/default/train"
