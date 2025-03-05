@@ -147,6 +147,10 @@ python app.py
 
 ## 🐳 Docker Setup
 
+The containerized tool uses Ollama for local LLM inference and Argilla for data curation. Here's the architecture:
+
+![Container Structure](https://cdn-uploads.huggingface.co/production/uploads/64461026e1fd8d65b27e6187/Uz-kDOBrV-_GahUrc1K_O.png)
+
 Quick setup with all services (App + Ollama + Argilla):
 
 ```bash

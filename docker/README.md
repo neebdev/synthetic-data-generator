@@ -1,5 +1,9 @@
 # Docker Configuration Guide
 
+Each service runs in its own container, communicating through internal networks. The core app connects to Ollama for model inference and Argilla for data review:
+
+![Container Structure](https://cdn-uploads.huggingface.co/production/uploads/64461026e1fd8d65b27e6187/Uz-kDOBrV-_GahUrc1K_O.png)
+
 The application can be run with different configurations using Docker Compose:
 
 - `docker-compose.yml`: Core application
