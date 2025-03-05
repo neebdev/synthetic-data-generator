@@ -30,12 +30,6 @@ Here's how it all fits together:
 
 ![image/png](https://cdn-uploads.huggingface.co/production/uploads/64461026e1fd8d65b27e6187/Uz-kDOBrV-_GahUrc1K_O.png)
 
-The Docker-based architecture integrates these core services:
-
-**[Synthetic Dataset Generator](https://github.com/argilla-io/synthetic-data-generator)**: No-code interface for dataset creation
-**[Ollama](https://github.com/ollama/ollama)**: Local inference with Distilabel for structured generation
-**[Argilla](https://github.com/argilla-io/argilla)**: Comprehensive data curation platform
-
 Let's explore how these components work together in a practical workflow.
 
 ## 1. Installation & Setup
@@ -72,7 +66,7 @@ docker compose -f docker-compose.yml -f docker/ollama/compose.yml -f docker/argi
 To view logs, either:
 - Use Docker Desktop's interface
 - Remove the `-d` flag when running the above command
-- Execute the following for specific service logs:
+- Or execute the following for specific service logs:
   ```bash
   # Core App logs
   docker compose logs -f app
@@ -84,9 +78,14 @@ To view logs, either:
 
 ## 2. Dataset Generation
 
-Let's walk through creating a RAG dataset. For a detailed overview of the generation process, check out the [introduction to the Synthetic Data Generator](https://huggingface.co/blog/synthetic-data-generator).
+The tool currently supports **Text Classification**, **Chat**, and **RAG** datasets. These tasks will determine the type of dataset you will generate: classification requires categories, chat data requires a conversation format, and RAG requires question-answer pairs with relevant context, offering options for both retrieval and reranking data generation to enhance different aspects of information retrieval systems.
 
-2.1. **Dataset Description**
+For a detailed overview of the generation process, check out the [introduction to the Synthetic Data Generator](https://huggingface.co/blog/synthetic-data-generator).
+
+
+### 2.1. **Dataset Description**
+
+   Let's walk through creating a **RAG dataset**.
    ```text
    A dataset to retrieve information from information security policies
    ```
@@ -95,12 +94,12 @@ Let's walk through creating a RAG dataset. For a detailed overview of the genera
    ![image/png](https://cdn-uploads.huggingface.co/production/uploads/64461026e1fd8d65b27e6187/sxH8JChF-HnGMOilymYpA.png)
 
 
-2.2. **Task Configuration & Sample Generation**
+### 2.2. **Task Configuration & Sample Generation**
    System analyzes and generates the system prompt and optimal parameters automatically. Then, samples are generated for validation (modify system prompt or parameters manually if needed, then click save to generate sample data):
    ![image/png](https://cdn-uploads.huggingface.co/production/uploads/64461026e1fd8d65b27e6187/mYVlGNnz6YNrPJutxmBtR.png)
 
 
-2.3. **Full Dataset Generation**
+### 2.3. **Full Dataset Generation**
    After validating the sample data quality, proceed with full dataset generation. Configure the following parameters:
 
    - **Repository Owner**: Your Hugging Face username for dataset hosting
@@ -203,9 +202,7 @@ After successfully generating your first dataset, several advanced implementatio
 
 Extend your dataset generation capabilities:
 - [Fine-tune models on synthetic data](https://huggingface.co/blog/davidberenstein1957/fine-tune-a-smollm-on-synthetic-data-of-llm) for domain-specific tasks
-- Implement custom validation workflows
 - [Create specialized reasoning datasets](https://huggingface.co/blog/sdiazlor/fine-tune-deepseek-with-a-synthetic-reasoning-data) for advanced model training
-- Scale dataset generation for production needs
 
 ## Conclusion
 
