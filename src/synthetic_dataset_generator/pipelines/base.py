@@ -104,8 +104,9 @@ def _get_llm(
             del kwargs["generation_kwargs"]["stop_sequences"]
         if "do_sample" in kwargs["generation_kwargs"]:
             del kwargs["generation_kwargs"]["do_sample"]
-        # Ensure top_p is always set to a valid value
-        kwargs["generation_kwargs"]["top_p"] = 0.95
+        # Ensure top_p is always set to a valid value (strictly less than 1.0)
+        if "top_p" not in kwargs["generation_kwargs"] or kwargs["generation_kwargs"]["top_p"] >= 1.0:
+            kwargs["generation_kwargs"]["top_p"] = 0.99
         llm = OpenAILLM(
             model=model,
             base_url=base_urls["openai"],
