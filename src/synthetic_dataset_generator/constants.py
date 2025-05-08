@@ -40,24 +40,25 @@ base_urls_completion = [
 
 # Validate the configuration of the model and base URLs.
 def validate_configuration(base_urls, model, env_context=""):
-    huggingface_url = base_urls[2]
-    if huggingface_url and model:
-        raise ValueError(
-            f"`HUGGINGFACE_BASE_URL{env_context}` and `MODEL{env_context}` cannot be set at the same time. "
-            "Use a model id for serverless inference and a base URL dedicated to Hugging Face Inference Endpoints."
-        )
-
-    if not model and any(base_urls):
-        raise ValueError(
-            f"`MODEL{env_context}` is not set. Please provide a model id for inference."
-        )
-
+    huggingface_url = base_urls[2]  # HUGGINGFACE_BASE_URL
+    
+    # The issue is here - when using Hugging Face Inference Endpoints with base_url,
+    # we should NOT require the model to be unset.
+    # Instead, we should only check if multiple base URLs are active
+    
     active_urls = [url for url in base_urls if url]
     if len(active_urls) > 1:
         raise ValueError(
             f"Multiple base URLs are provided: {', '.join(active_urls)}. "
             "Only one base URL can be set at a time."
         )
+    
+    # Only validate that a model is set when needed
+    if not model and any(base_urls) and not huggingface_url:
+        raise ValueError(
+            f"`MODEL{env_context}` is not set. Please provide a model id for inference."
+        )
+
 validate_configuration(base_urls, MODEL)
 validate_configuration(base_urls_completion, MODEL_COMPLETION, "_COMPLETION")
 

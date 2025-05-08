@@ -144,6 +144,7 @@ def _get_llm(
             tokenizer_id=tokenizer_id,
             use_magpie_template=use_magpie_template,
             structured_output=structured_output,
+            model_id=model,
             **kwargs,
         )
     elif base_urls["vllm"]:
