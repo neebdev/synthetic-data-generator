@@ -1,6 +1,13 @@
 import os
 import warnings
 
+# Add dotenv loader to ensure environment variables are loaded from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv(override=True)  # Load environment variables from .env file
+except ImportError:
+    print("Warning: python-dotenv not installed. Environment variables from .env file will not be loaded.")
+
 import argilla as rg
 
 # Inference
