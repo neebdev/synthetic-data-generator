@@ -95,6 +95,13 @@ def _get_llm(
     }
 
     if base_urls["openai"]:
+        llm = OpenAILLM(
+            model=model,
+            base_url=base_urls["openai"],
+            api_key=_get_next_api_key(),
+            structured_output=structured_output,
+            **kwargs,
+        )
         if "generation_kwargs" in kwargs:
             if "stop_sequences" in kwargs["generation_kwargs"]:
                 kwargs["generation_kwargs"]["stop"] = kwargs["generation_kwargs"][
@@ -103,17 +110,6 @@ def _get_llm(
                 del kwargs["generation_kwargs"]["stop_sequences"]
             if "do_sample" in kwargs["generation_kwargs"]:
                 del kwargs["generation_kwargs"]["do_sample"]
-            if "top_p" in kwargs["generation_kwargs"]:
-                top_p = kwargs["generation_kwargs"]["top_p"]
-                if not (0.0 < top_p < 1.0):
-                    kwargs["generation_kwargs"]["top_p"] = 0.95
-        llm = OpenAILLM(
-            model=model,
-            base_url=base_urls["openai"],
-            api_key=_get_next_api_key(),
-            structured_output=structured_output,
-            **kwargs,
-        )
     elif base_urls["ollama"]:
         if "generation_kwargs" in kwargs:
             if "max_new_tokens" in kwargs["generation_kwargs"]:
